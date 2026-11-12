@@ -26,7 +26,9 @@ get_greco_files <- function(sha = GRECO_SHA, dir = "data/raw/ufcstats_greco") {
 # Read and lightly clean the Greco CSVs into a named list of tibbles: trim
 # whitespace and attach parsed event dates to fights.
 read_greco <- function(paths) {
-  rd <- \(f) readr::read_csv(paths[[f]], show_col_types = FALSE, guess_max = 1e5) |>
+  # Look files up by basename (targets drops vector names on file targets).
+  path_of <- \(f) paths[basename(paths) == paste0(f, ".csv")]
+  rd <- \(f) readr::read_csv(path_of(f), show_col_types = FALSE, guess_max = 1e5) |>
     dplyr::mutate(dplyr::across(dplyr::where(is.character), stringr::str_squish))
   list(
     events   = rd("ufc_event_details") |> dplyr::mutate(date = lubridate::mdy(DATE)),

@@ -23,7 +23,9 @@ name_sim <- function(x, y) {
     if (anyNA(a) || anyNA(b)) return(FALSE)
     short <- if (length(a) <= length(b)) a else b
     long  <- if (length(a) <= length(b)) b else a
-    length(short) >= 2 && all(short %in% long)
+    # Two-plus-word subset, or a mononym ("Maheshate") equal to a word of the other name.
+    (length(short) >= 2 && all(short %in% long)) ||
+      (length(short) == 1 && length(long) >= 2 && nchar(short) >= 5 && short %in% long)
   })
   pmax(jw(nx, ny), jw(sort_words(nx), sort_words(ny)), if_else(subset, 0.97, 0))
 }

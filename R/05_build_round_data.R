@@ -96,6 +96,61 @@ build_judge_rounds <- function(judge_rounds, links, rs_wide, ufc_fights) {
                   .names = "d_{sub('_a$', '', .col)}"))
 }
 
+# Map each media pick ("Suarez", "DRAW") to fighter 1 / fighter 2 / draw.
+# MMADecisions writes the picked fighter's display surname, so we look for it
+# inside each full name; if it matches both fighters (same surname), it's NA.
+media_side <- function(pick, fighter1, fighter2) {
+  p <- normalize_name(pick)
+  in1 <- str_detect(normalize_name(fighter1), fixed(p))
+  in2 <- str_detect(normalize_name(fighter2), fixed(p))
+  case_when(p == "draw" ~ "draw", in1 & !in2 ~ "f1", in2 & !in1 ~ "f2", TRUE ~ NA_character_)
+}
+
+# Fight-level table: one row per linked decision with the official result,
+# each judge's card total (oriented to UFCStats fighter A), media consensus and
+# a flag for whether full round-by-round judge scores exist.
+build_fight_table <- function(mmad, links, ufc_fights) {
+  lk <- links |> filter(confidence != "unmatched") |>
+    select(decision_id, fight_url, f1_is_a, link_confidence = confidence)
+
+  totals <- mmad$judge_totals |>
+    inner_join(lk, by = "decision_id") |>
+    mutate(total_a = if_else(f1_is_a, total_f1, total_f2),
+           total_b = if_else(f1_is_a, total_f2, total_f1),
+           card = sprintf("%s %d-%d", judge, total_a, total_b)) |>
+    group_by(decision_id) |>
+    summarise(judge_cards_a = paste(card, collapse = "; "),
+              placeholder_totals = any(total_a + total_b < 10), .groups = "drop")
+
+  rounds_ok <- mmad$judges |>
+    group_by(decision_id) |>
+    summarise(has_round_scores = all(!is.na(score_f1) & !is.na(score_f2)), .groups = "drop")
+
+  media <- mmad$media |>
+    inner_join(mmad$fight |> select(decision_id, fighter1, fighter2), by = "decision_id") |>
+    inner_join(lk, by = "decision_id") |>
+    mutate(side = media_side(media_pick, fighter1, fighter2),
+           side_ab = case_when(side == "draw" ~ "draw",
+                               side == "f1" ~ if_else(f1_is_a, "a", "b"),
+                               side == "f2" ~ if_else(f1_is_a, "b", "a"))) |>
+    group_by(decision_id) |>
+    summarise(n_media = n(), n_media_unmapped = sum(is.na(side_ab)),
+              media_a = sum(side_ab == "a", na.rm = TRUE),
+              media_b = sum(side_ab == "b", na.rm = TRUE),
+              media_draw = sum(side_ab == "draw", na.rm = TRUE), .groups = "drop")
+
+  lk |>
+    inner_join(mmad$fight |> select(decision_id, mmad_method = method, result_word), by = "decision_id") |>
+    inner_join(ufc_fights |> select(fight_url, date, event, fighter_a, fighter_b, outcome_a,
+                                    decision_type, sched_rounds, title_fight, weightclass),
+               by = "fight_url") |>
+    left_join(totals, by = "decision_id") |>
+    left_join(rounds_ok, by = "decision_id") |>
+    left_join(media, by = "decision_id") |>
+    mutate(winner = case_when(outcome_a == "W" ~ "a", outcome_a == "L" ~ "b", TRUE ~ "draw"),
+           n_media = coalesce(n_media, 0L))
+}
+
 # Reshape fighter rows to one row per fight-round with A and B stats side by side.
 round_stats_wide <- function(round_stats) {
   round_stats |>

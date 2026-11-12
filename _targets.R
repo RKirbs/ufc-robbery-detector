@@ -26,6 +26,7 @@ list(
   tar_target(mmad_fights_file, write_parquet_target(mmad_parsed$fight,  "data/interim/mmad_fights.parquet"),  format = "file"),
   tar_target(mmad_judges_file, write_parquet_target(mmad_parsed$judges, "data/interim/mmad_judge_rounds.parquet"), format = "file"),
   tar_target(mmad_media_file,  write_parquet_target(mmad_parsed$media,  "data/interim/mmad_media.parquet"),  format = "file"),
+  tar_target(mmad_totals_file, write_parquet_target(mmad_parsed$judge_totals, "data/interim/mmad_judge_totals.parquet"), format = "file"),
 
   # ---- Stage 3: clean UFCStats into fights + round stats ---------------------
   tar_target(ufc_fights, clean_greco_fights(greco) |>
@@ -40,5 +41,8 @@ list(
   # ---- Stage 5: judge x round modeling table --------------------------------
   tar_target(judge_rounds, build_judge_rounds(mmad_parsed$judges, links, rs_wide, ufc_fights)),
   tar_target(judge_rounds_file,
-             write_parquet_target(judge_rounds, "data/interim/judge_rounds.parquet"), format = "file")
+             write_parquet_target(judge_rounds, "data/interim/judge_rounds.parquet"), format = "file"),
+  tar_target(fight_table, build_fight_table(mmad_parsed, links, ufc_fights)),
+  tar_target(fight_table_file,
+             write_parquet_target(fight_table, "data/interim/fight_table.parquet"), format = "file")
 )
