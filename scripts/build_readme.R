@@ -31,7 +31,7 @@ readme <- glue('
 
 **Which UFC decisions did the statistics say went to the wrong fighter?** A model trained on {num(fx("n_judge_rounds"), 0)} real judges\' round scores, plus a simulation of correlated judges, scores every UFC decision since 2001.
 
-**Live site:** https://GITHUB-USERNAME.github.io/ufc-robbery-detector/ *(set in Phase 8)*
+**Live site:** https://rkirbs.github.io/ufc-robbery-detector/
 
 ![Round-by-round breakdown of the decision with the highest Robbery Score](figures/signature_chart.png)
 
@@ -115,7 +115,7 @@ Code is released under the MIT License.
 
 ## Author
 
-Rob Kirby: Economics, Finance & Business Analytics. *(Contact link: add in Phase 8.)*
+Rob Kirby: Economics, Finance & Business Analytics · GitHub: [@rkirbs](https://github.com/rkirbs)
 ')
 writeLines(readme, "README.md")
 cat("README.md and figures/signature_chart.png written\n")

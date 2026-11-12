@@ -27,3 +27,6 @@ analysis/_freeze/
 # OS / editor
 .DS_Store
 .vscode/
+
+# iCloud/Finder sync duplicates ("file 2.js")
+* 2.*
