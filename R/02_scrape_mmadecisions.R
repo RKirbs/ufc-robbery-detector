@@ -95,6 +95,19 @@ mmad_parse_decision <- function(html, decision_id) {
 
   # Each judge's card is a small table headed by td.judge.
   judge_cells <- doc |> html_elements("td.judge")
+
+  # Card totals. Older pages often show "-" for every round but still give the
+  # judge's total, so we keep totals separately.
+  judge_totals <- map_dfr(seq_along(judge_cells), \(i) {
+    tbl <- judge_cells[[i]] |> html_element(xpath = "ancestor::table[1]")
+    tot <- tbl |> html_elements("td.bottom-cell") |> html_text() |> clean_txt()
+    tibble(decision_id = decision_id, judge_order = i,
+           judge = judge_cells[[i]] |> html_text() |> clean_txt(),
+           judge_id = judge_cells[[i]] |> html_element("a") |> html_attr("href") |> href_id(),
+           total_f1 = suppressWarnings(as.integer(tot[1])),
+           total_f2 = suppressWarnings(as.integer(tot[2])))
+  })
+
   judges <- map_dfr(seq_along(judge_cells), \(i) {
     tbl <- judge_cells[[i]] |> html_element(xpath = "ancestor::table[1]")
     rows <- tbl |> html_elements("tr.decision")
@@ -130,7 +143,7 @@ mmad_parse_decision <- function(html, decision_id) {
     })
   }
 
-  list(fight = fight, judges = judges, media = media)
+  list(fight = fight, judges = judges, judge_totals = judge_totals, media = media)
 }
 
 # Parse every cached decision page and stack the results into three tables.
@@ -141,9 +154,10 @@ parse_all_decisions <- function(files) {
     mmad_parse_decision(readr::read_file(f), id),
     error = \(e) { warning(sprintf("Parse failed for decision %s: %s", id, conditionMessage(e))); NULL }))
   parsed <- compact(parsed)
-  list(fight  = map_dfr(parsed, "fight"),
-       judges = map_dfr(parsed, "judges"),
-       media  = map_dfr(parsed, "media"))
+  list(fight        = map_dfr(parsed, "fight"),
+       judges       = map_dfr(parsed, "judges"),
+       judge_totals = map_dfr(parsed, "judge_totals"),
+       media        = map_dfr(parsed, "media"))
 }
 
 # Write a data frame to Parquet and return its path (for format = "file" targets).

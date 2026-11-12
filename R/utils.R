@@ -35,7 +35,7 @@ fetch_cached <- function(url, cache_file, min_wait = 1.5, max_wait = 3) {
     req_user_agent(SCRAPER_UA) |>
     req_timeout(30) |>
     # Retry transient failures (timeouts, 429, 5xx) with exponential backoff.
-    req_retry(max_tries = 4, backoff = ~ 5 * 2^(.x - 1),
+    req_retry(max_tries = 4, backoff = ~ 5 * 2^(.x - 1), retry_on_failure = TRUE,
               is_transient = \(r) resp_status(r) %in% c(429, 500, 502, 503, 504)) |>
     req_error(is_error = \(r) FALSE) |>
     req_perform()
