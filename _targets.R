@@ -106,5 +106,21 @@ list(
                                        judge_corr_glmnet$rho, ten_eight_corr$rho8, deductions_fight)),
   # Sanity checks: a direct fight-level model, and judges' card totals.
   tar_target(fight_direct, fight_level_check(dec_rounds, fight_table)),
-  tar_target(card_check, card_total_check(mmad_parsed, links, sims, fight_table))
+  tar_target(card_check, card_total_check(mmad_parsed, links, sims, fight_table)),
+
+  # ---- Stage 8: validation, judges, 2017 criteria (Phase 5) ----------------------
+  tar_target(media_valid, media_validation(robbery_index)),
+  tar_target(media_disagree, media_disagreements(robbery_index)),
+  tar_target(round_agree, round_agreement(model_data, round_probs)),
+  tar_target(face_valid, face_validity(robbery_index)),
+  tar_target(fighter_exp, fighter_experience(greco)),
+  tar_target(judge_table, judge_round_table(model_data, round_probs, fighter_exp)),
+  tar_target(judge_agree, judge_agreement(judge_table)),
+  tar_target(judge_tend, judge_tendencies(judge_table, logit_effects)),
+  tar_target(corner, corner_effects(judge_table)),
+  tar_target(recency, recency_test(robbery_index, round_probs)),
+  tar_target(criteria_era, criteria_era_model(model_data)),
+  tar_target(criteria_era_no2017, criteria_era_model(model_data, drop_2017 = TRUE)),
+  tar_target(ten_eight_era, ten_eight_trend(ten_eight_data)),
+  tar_target(robbery_time, robbery_trend(robbery_index))
 )

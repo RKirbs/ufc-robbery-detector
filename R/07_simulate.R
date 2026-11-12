@@ -18,6 +18,7 @@
 suppressPackageStartupMessages({ library(dplyr); library(tidyr); library(purrr) })
 
 N_SIMS <- 10000L
+LIMITED_DATA_BEFORE <- as.Date("2008-01-01")
 ROBBERY_TIERS <- c(Clean = 0, `Close / defensible` = 0.25, Questionable = 0.50, Robbery = 0.75)
 
 # ---- Round inputs for every decision ------------------------------------------
@@ -250,7 +251,9 @@ build_robbery_index <- function(fight_table, sims, stat_summary, deductions) {
       tier = robbery_tier(robbery_score),
       media_scored = media_a + media_b + media_draw,
       media_for_loser = case_when(winner == "a" ~ media_b, winner == "b" ~ media_a),
-      media_loser_share = if_else(media_scored > 0, media_for_loser / media_scored, NA_real_)
+      media_loser_share = if_else(media_scored > 0, media_for_loser / media_scored, NA_real_),
+      # Thin data: early-era stats were coded from video years later, and few media scored these fights.
+      limited_corroboration = date < LIMITED_DATA_BEFORE | coalesce(media_scored, 0L) < 3L
     ) |>
     mutate(why = if_else(winner == "draw", NA_character_,
                          explain_fight(winner_name, loser_name, pick(everything()))),

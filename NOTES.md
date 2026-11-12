@@ -56,5 +56,23 @@
 - **Phase 4 checkpoint:** proposed tiers are the brief's 0.25 / 0.50 / 0.75 (225 robbery-tier fights, 5.6%). Recommendation: don't tune cutoffs on media (media are the Phase 5 validation set). Awaiting Rob.
 - Data caveat: pre-2008 stats were coded from video after the fact, and some early fights have 0–2 media scores. Proposal: flag them as "limited corroboration" on the leaderboard.
 
+- **2026-11-12. Rob approved Phase 4:** keep the tier cutoffs at 0.25 / 0.50 / 0.75. Flag thin-data leaderboard entries (before 2008 or fewer than 3 media scores) as "limited corroboration" instead of dropping them.
+- **2026-11-12. 2017 criteria date verified.**
+  - The ABC approved the revised MMA scoring criteria (effective striking/grappling first; clearer 10-8 standards) at its August 2016 conference. The ABC MMA Officials Handbook lists the Unified Rules as amended August 3, 2016.
+  - They took effect January 1, 2017, but state commissions adopted them on their own timelines.
+  - Sources: Bloody Elbow (2017-01-02; 2018-02-01), BJPenn.com, Uproxx, ABC MMA Officials Handbook (abcboxing.com).
+  - We use 2017-01-01 as the era break, with a sensitivity check that drops 2017 (the transition year). The ABC also issued a scoring clarification in July 2025; noted, but it isn't analysed.
+
+- **2026-11-12. Phase 5 results (checkpoint):**
+  - Media validation r = 0.59 (CI 0.56–0.62).
+  - Judges' closeness-adjusted agreement with the model is tightly clustered (2 of 49 judges' intervals exclude the average).
+  - The red-corner lean is +5.6 points on a 50/50 round with controls (shrinking from +8.0 to +3.0 after 2017).
+  - 2017 weights changed (p = 0.0006): knockdowns up, takedowns down.
+  - 10-8s peaked in 2017–2020, then fell.
+  - No clear change in robbery rates.
+- Assumption: UFCStats lists the red-corner fighter first (fighter A). Used for the red-corner analysis.
+- Face validity uses a hand-made list of widely debated decisions (`DEBATED_DECISIONS` in R/08). It's for checking only, never a model input.
+- To check manually: Said Nurmagomedov vs. Scoggins (2018). UFCStats has Nurmagomedov out-landing Scoggins 65–32, but all 17 media scored Scoggins. This could be a stat-recording error.
+
 ## Open questions
 - Use the BestFightOdds odds extension (Phase 6)? Ask before scraping (about 30–45 min).
