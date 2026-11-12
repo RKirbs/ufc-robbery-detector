@@ -136,5 +136,17 @@ list(
   tar_target(fav_effects, favourite_effects(judge_table, odds)),
   tar_target(decision_risk, decision_risk_test(ufc_fights, odds, robbery_index)),
   tar_target(robbery_market, robbery_vs_market(robbery_index, odds)),
-  tar_target(red_market, red_vs_market(ufc_fights, odds))
+  tar_target(red_market, red_vs_market(ufc_fights, odds)),
+
+  # ---- Stage 10: small committed datasets for the Quarto site (Phase 7) ---------------
+  tar_target(feat, featured_fights(robbery_index, face_valid)),
+  tar_target(facts, site_facts(mmad_parsed, links, fight_table, model_data, model_ok, judge_corr, ten_eight_corr,
+                               media_valid, round_agree, criteria_era, criteria_era_no2017, ten_eight_era,
+                               robbery_time, fav_effects, red_market, odds_cov, mmad_deductions, logit_effects, corner)),
+  tar_target(site_tables, build_site_tables(robbery_index, odds, feat, dec_rounds, round_probs, mmad_judges_adj, links,
+                                            facts, fight_table, test_results, cv_results, rolling_results, test_calibration,
+                                            logit_effects, shap_xgb, triples, judge_corr, media_disagree, face_valid,
+                                            judge_agree, judge_tend, corner, recency, fav_effects, red_market, decision_risk,
+                                            robbery_market, criteria_era, ten_eight_era, robbery_time, odds_cov)),
+  tar_target(site_files, write_site_exports(site_tables), format = "file")
 )

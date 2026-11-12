@@ -1,0 +1,52 @@
+---
+title: "Fight Lookup"
+subtitle: "Round-by-round breakdowns of notable decisions"
+---
+
+```{r}
+#| label: setup
+#| include: false
+source("_common.R")
+feat <- rd("featured_fights")
+rounds <- rd("featured_rounds"); judges <- rd("featured_judges")
+fights <- feat |> inner_join(ri, by = "fight_url") |>
+  mutate(group = factor(group, c("Top robbery", "Widely debated decision"))) |>
+  arrange(group, desc(robbery_score))
+```
+
+Each breakdown shows the round-by-round statistics, how each judge scored each round (official scores, so they include any point deductions), and the model's probability that the official loser won the round. The model only sees that round's statistics, and treats both corners identically.
+
+Two groups are featured:
+
+- **The `r sum(fights$group == "Top robbery")` highest Robbery Scores**, the strongest disagreements between the stats and the result.
+- **`r sum(fights$group == "Widely debated decision")` widely debated decisions that the model rates as less clear-cut.** These are a reminder that "lots of people argued about it" and "the stats disagree" are not the same thing.
+
+```{r}
+#| label: fights
+#| results: asis
+#| fig-height: 8.5
+for (grp in levels(fights$group)) {
+  cat("\n\n## ", if (grp == "Top robbery") "Top robberies" else "Widely debated decisions", "\n\n", sep = "")
+  for (i in which(fights$group == grp)) {
+    x <- fights[i, ]
+    cat("\n\n### ", fight_label(x$winner_name, x$loser_name), " (", format(x$date, "%Y"), ")\n\n", sep = "")
+    media <- if (coalesce(x$media_scored, 0) > 0)
+      sprintf("%d of %d media scorecards had %s winning.", x$media_for_loser, x$media_scored, x$loser_name) else
+      "No media scorecards are recorded."
+    odds <- if (!is.na(x$mkt_p_winner)) sprintf(" Closing betting line: %s was %s (%s implied).",
+                                                x$winner_name, if (x$mkt_p_winner >= 0.5) "the favourite" else "the underdog",
+                                                pct(x$mkt_p_winner)) else ""
+    cat(sprintf("%s · %s decision · **Robbery Score %.3f** (%s) · P(%s wins) = %s, P(draw) = %s.\n\n",
+                x$event, x$decision_type, x$robbery_score, x$tier, x$loser_name, pct(x$p_loser), pct(x$p_draw, 0.1)))
+    cat(sprintf("Official cards (winner first): %s. %s%s\n\n", x$cards_winner_first, media, odds))
+    cat(x$why, "\n\n")
+    print(plot_fight_breakdown(x, filter(rounds, fight_url == x$fight_url), filter(judges, fight_url == x$fight_url)))
+    cat("\n\n")
+  }
+}
+```
+
+::: {.callout-note appearance="simple"}
+## Why might the model and the judges disagree?
+The model is trained on how judges score rounds *on average*, from statistics alone. It can't see damage, a fighter being hurt without a knockdown, the quality of strikes, or octagon control. When the media (who watched the fight) side with the judges against the stats, those unseen factors are the likely reason.
+:::

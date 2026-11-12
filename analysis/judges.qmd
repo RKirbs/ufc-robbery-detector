@@ -1,0 +1,91 @@
+---
+title: "Judges"
+subtitle: "How individual judges and the judging pool relate to the statistics"
+---
+
+```{r}
+#| label: setup
+#| include: false
+source("_common.R")
+ja <- rd("judge_agreement"); jt <- rd("judge_tendencies"); ce <- rd("corner_effects")
+fav <- rd("fav_effects"); rec <- rd("recency"); dr <- rd("decision_risk"); rm <- rd("robbery_market")
+red_mkt <- rd("red_market")
+jae <- ja |> filter(rounds >= 100)
+jte <- jt |> filter(rounds >= 100)
+n_out_agree <- sum(jae$adj_lo > jae$league_adj_agree[1] | jae$adj_hi < jae$league_adj_agree[1])
+n_out_grap <- sum(jte$grap_lo > 1 | jte$grap_hi < 1)
+pp <- \(b) 100 * (plogis(b) - 0.5)
+era <- ce |> filter(model == "by_era", term == "(Intercept)")
+fullm <- ce |> filter(model == "full")
+title_pt <- pp(fullm$est[fullm$term == "title_fightTRUE"])
+title_lo <- pp(fullm$est[fullm$term == "title_fightTRUE"] - 1.96 * fullm$se[fullm$term == "title_fightTRUE"])
+title_hi <- pp(fullm$est[fullm$term == "title_fightTRUE"] + 1.96 * fullm$se[fullm$term == "title_fightTRUE"])
+le_last <- rec |> filter(term == "last_edge")
+early <- dr |> filter(sample == "Fights that ended early", term == "d_prem")
+alld <- dr |> filter(sample == "All fights with odds", term == "d_prem")
+```
+
+::: {.callout-important appearance="simple"}
+## How to read this page
+Everything here measures **agreement with a statistical model**. The model sees only counted statistics, not damage, power or octagon control. A judge who agrees with it less often may simply be weighing those things more. Nothing on this page says any judge is bad, biased or acting in bad faith.
+
+Every judge-level estimate uses judges with **at least 100 scored rounds** and **shrinkage** (mixed models with judge random effects), so small samples don't produce extreme rankings. Intervals are 95%.
+:::
+
+## Do judges agree with the statistics at different rates?
+
+Raw agreement rates mislead, because some judges happen to score more close rounds than others. So agreement is measured on a *typical* round (the model favours one fighter 75/25), adjusted for how close each judge's rounds were.
+
+```{r}
+#| label: agreement
+#| fig-height: 10
+plot_judge_agreement(ja)
+```
+
+Across `r nrow(jae)` judges, adjusted agreement ranges only from `r pct(min(jae$adj_agree), 0.1)` to `r pct(max(jae$adj_agree), 0.1)` (league average `r pct(jae$league_adj_agree[1], 0.1)`), and only `r n_out_agree` judge`r if (n_out_agree == 1) "" else "s"` have intervals that exclude the average. **Once you account for how hard their rounds were, judges agree with the stats at very similar rates.**
+
+## Do some judges weigh grappling more than striking?
+
+Each judge gets their own multiplier on the striking and grappling parts of the round model (takedowns, control time, submission attempts, reversals).
+
+```{r}
+#| label: grappling
+#| fig-height: 10
+plot_grappling(jt)
+```
+
+`r n_out_grap` of `r nrow(jte)` judges have intervals that exclude the league average, more than the 2–3 you'd expect by chance. So there's real, if modest, variation in how much individual judges reward grappling relative to striking.
+
+## The red corner and the betting favourite
+
+On UFCStats the red-corner fighter (usually the more established fighter, or the champion) is listed first, but only from **`r format(fx_date("corner_known_from"), "%B %d, %Y")`**. Before that the *winner* was listed first, so corner analyses use only later fights.
+
+```{r}
+#| label: corner
+#| fig-height: 4.8
+plot_corner_favourite(fav)
+```
+
+- **Red corner.** Controlling for each round's statistics and both fighters' UFC experience and record, judges give a statistically even round to the red corner `r pts(fx("red_pts_full"))` points more often (95% CI `r num(fx("red_pts_full_lo"))` to `r num(fx("red_pts_full_hi"))`). The lean was larger in 2010–2016 (`r pts(pp(era$est[era$era == "2010-2016"]))`) than in 2017–2026 (`r pts(pp(era$est[era$era == "2017-2026"]))`).
+- **Betting favourite.** Using closing odds, judges give a statistically even round to a −300 favourite `r pts(fx("fav_pts"))` points more often (95% CI `r num(fx("fav_pts_lo"))` to `r num(fx("fav_pts_hi"))`). Controlling for the line shrinks the red-corner lean from `r pts(fx("red_pts_nomarket"))` to `r pts(fx("red_pts_market"))` points, so part of the "red corner" effect is really a "favourite" effect, but not all of it.
+- **Interpretation.** Betting markets price things statistics miss: power, durability and reputation. Part of the favourite lean may be judges seeing the same unmeasured quality the market sees. These are associations, not evidence of intent.
+- **Title fights.** There's no clear extra lean toward the red corner (the champion's corner) in title fights: `r pts(title_pt)` points (95% CI `r num(title_lo)` to `r num(title_hi)`).
+- **Late-round recency.** Winning the final round, by the stats, doesn't predict the official result beyond the full simulation (p = `r num(le_last$p, 2)`). Under round-by-round 10-point-must scoring there's little room for recency.
+
+## Betting markets and "decision risk"
+
+Do bettors account for fighters who tend to win on the cards more than the stats suggest? For each fighter we computed a **card premium** before every fight: how much more often, on average, they had won earlier UFC decisions than the stats predicted (shrunk toward zero for fighters with few decisions).
+
+- Across all fights with odds, a larger premium predicts doing slightly *worse* than the closing line (coefficient `r num(alld$est, 2)`, SE `r num(alld$se, 2)`).
+- The effect is concentrated in **fights that end early** (`r num(early$est, 2)`, SE `r num(early$se, 2)`). It's close to zero when the fight goes to the judges.
+- One reading: the market slightly overrates records that include generous decisions. This is one exploratory test, so treat it as suggestive.
+
+```{r}
+#| label: robbery-market
+rm |> mutate(tier = factor(tier, names(tier_cols))) |> arrange(tier) |>
+  transmute(Tier = tier, Decisions = n, `Official winner was the betting favourite` = winner_was_favourite,
+            `Winner's average market probability` = mean_winner_mkt) |>
+  gt() |> fmt_percent(c(3, 4), decimals = 0) |>
+  tab_header(title = "Robberies don't systematically go to the favourite",
+             subtitle = "Decisions with closing odds (2007 onward)")
+```

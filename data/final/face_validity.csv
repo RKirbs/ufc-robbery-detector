@@ -1,0 +1,14 @@
+date,event,winner_name,loser_name,decision_type,robbery_score,tier,rank,pct_rank,media_loser_share,media_scored,query
+2013-11-16,UFC 167: St-Pierre vs Hendricks,Georges St-Pierre,Johny Hendricks,Split,0.5691999999999999,Questionable,468,0.8846343873517787,1,16,St-Pierre def. Hendricks 2013
+2020-02-08,UFC 247: Jones vs. Reyes,Jon Jones,Dominick Reyes,Unanimous,0.6617999999999999,Questionable,332,0.9182312252964426,0.6666666666666666,21,Jones def. Reyes 2020
+2020-07-11,UFC 251: Usman vs. Masvidal,Alexander Volkanovski,Max Holloway,Split,0.07869999999999999,Clean,2056,0.4923418972332016,0.6666666666666666,27,Volkanovski def. Holloway 2020
+2014-06-07,UFC Fight Night: Henderson vs Khabilov,Diego Sanchez,Ross Pearson,Split,0.9468,Robbery,33,0.9920948616600791,1,14,Sanchez def. Pearson 2014
+2010-11-20,UFC 123: Rampage vs Machida,Quinton Jackson,Lyoto Machida,Split,0.6534,Questionable,344,0.9152667984189723,0.7142857142857143,7,Jackson def. Machida 2010
+2007-09-08,UFC 75: Champion vs Champion,Michael Bisping,Matt Hamill,Split,0.9323,Robbery,49,0.9881422924901185,0,2,Bisping def. Hamill 2007
+2012-02-04,UFC 143: Diaz vs Condit,Carlos Condit,Nick Diaz,Unanimous,0.4758,Close / defensible,643,0.8414031620553359,0.14285714285714285,7,Condit def. Diaz 2012
+2012-08-11,UFC 150: Henderson vs Edgar II,Benson Henderson,Frankie Edgar,Split,0.7877000000000001,Robbery,176,0.9567687747035574,0.7777777777777778,9,Henderson def. Edgar 2012
+2014-01-25,UFC on FOX: Henderson vs Thomson,Benson Henderson,Josh Thomson,Split,0.14159999999999995,Clean,1661,0.5896739130434783,0.8125,16,Henderson def. Thomson 2014
+2012-05-15,UFC on FUEL TV: Korean Zombie vs Poirier,Igor Pokrajac,Fabio Maldonado,Unanimous,0.9976,Robbery,1,1,0.8,5,Pokrajac def. Maldonado 2012
+2010-12-04,The Ultimate Fighter: Team GSP vs Team Koscheck Finale,Leonard Garcia,Nam Phan,Split,0.9922,Robbery,2,0.9997529644268774,1,5,Garcia def. Phan 2010
+2009-10-24,UFC 104: Machida vs Shogun,Lyoto Machida,Mauricio Rua,Unanimous,0.9577,Robbery,25,0.9940711462450593,1,5,Machida def. Rua 2009
+2015-04-04,UFC Fight Night: Mendes vs Lamas,Al Iaquinta,Jorge Masvidal,Split,0.9734,Robbery,15,0.9965415019762845,0.8571428571428571,14,Iaquinta def. Masvidal 2015

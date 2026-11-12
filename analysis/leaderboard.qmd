@@ -1,0 +1,121 @@
+---
+title: "The Robbery Leaderboard"
+subtitle: "Every UFC decision, ranked by how strongly the statistics disagree with the result"
+---
+
+```{r}
+#| label: setup
+#| include: false
+source("_common.R")
+tb <- rd("tiers")
+mt <- rd("media_by_tier")
+```
+
+The **Robbery Score** is 1 − P(declared winner wins | fight stats). A high score means the round-by-round statistics strongly favoured the fighter who lost. It does *not* mean the judges were wrong: stats can't see damage, power or octagon control. That's why every row also shows how the **media** scored the fight, and why some rows carry a *limited corroboration* flag (fights before 2008, when stats were coded from video years later, or fights with fewer than 3 media scores).
+
+## Tiers
+
+```{r}
+#| label: tiers
+tb |> mutate(tier = factor(tier, names(tier_cols))) |> arrange(tier) |>
+  left_join(mt |> select(tier, media_majority_loser), by = "tier") |>
+  transmute(Tier = tier,
+            `Score range` = c("< 0.25", "0.25–0.50", "0.50–0.75", "≥ 0.75")[as.integer(tier)],
+            Decisions = n, Share = share, `Media majority scored it for the loser*` = media_majority_loser) |>
+  gt() |>
+  fmt_number(Decisions, decimals = 0) |>
+  fmt_percent(c(Share, `Media majority scored it for the loser*`), decimals = 1) |>
+  tab_footnote("* Among decisions with at least 5 media scorecards.") |>
+  opt_row_striping()
+```
+
+The tiers are the cutoffs fixed before looking at the media data (0.25 / 0.50 / 0.75). Media agreement rises steadily across them, which is what a meaningful scale should do.
+
+```{r}
+#| label: distribution
+#| fig-alt: "Histogram of Robbery Scores coloured by tier"
+plot_robbery_distribution(ri)
+```
+
+## Search every decision
+
+Click a row to see why the model disagrees. Cards list the declared winner's total first.
+
+```{r}
+#| label: table
+tier_badge <- function(t) {
+  col <- tier_cols[[t]]
+  htmltools::span(class = "tier-pill", style = paste0("background:", col, ";",
+                  if (t %in% c("Clean", "Close / defensible")) "color:#1B1F24;" else ""), t)
+}
+tbl <- ri |>
+  arrange(desc(robbery_score)) |>
+  transmute(Date = date, Event = event, Winner = winner_name, Loser = loser_name,
+            Decision = coalesce(decision_type, "Draw"), Cards = cards_winner_first,
+            Score = robbery_score, Tier = as.character(tier), `P(winner)` = p_winner,
+            `Media for loser` = if_else(coalesce(media_scored, 0) > 0,
+                                        paste0(media_for_loser, "/", media_scored), "–"),
+            Flag = if_else(limited_corroboration, "Limited corroboration", ""),
+            why = coalesce(why, "Draw: no declared winner."))
+reactable(
+  tbl, searchable = TRUE, filterable = FALSE, striped = TRUE, highlight = TRUE, compact = TRUE,
+  defaultPageSize = 20, showPageSizeOptions = TRUE, pageSizeOptions = c(20, 50, 100),
+  defaultSorted = list(Score = "desc"),
+  columns = list(
+    Date = colDef(format = colFormat(date = TRUE), width = 100),
+    Event = colDef(minWidth = 180),
+    Cards = colDef(minWidth = 220, style = list(fontSize = "0.8rem")),
+    Score = colDef(format = colFormat(digits = 3), width = 80,
+                   style = function(v) list(fontWeight = if (!is.na(v) && v >= 0.75) 700 else 400)),
+    Tier = colDef(cell = function(v) if (is.na(v)) "Draw" else tier_badge(v), width = 140),
+    `P(winner)` = colDef(format = colFormat(percent = TRUE, digits = 0), width = 90),
+    `Media for loser` = colDef(width = 90, align = "center"),
+    Flag = colDef(width = 120, style = list(fontSize = "0.75rem", color = "#6B7280")),
+    why = colDef(show = FALSE)
+  ),
+  details = function(i) htmltools::div(style = "padding: 0.6rem 1rem; font-size: 0.9rem;", tbl$why[i])
+)
+```
+
+## Top 25
+
+```{r}
+#| label: top25
+top25 <- ri_nd |> arrange(desc(robbery_score)) |> head(25)
+top25 |>
+  transmute(Rank = row_number(), Date = date, Bout = fight_label(winner_name, loser_name),
+            Decision = decision_type, Cards = cards_winner_first, `Robbery Score` = robbery_score,
+            `P(loser wins)` = p_loser,
+            `Media for loser` = if_else(coalesce(media_scored, 0) > 0, paste0(media_for_loser, " of ", media_scored), "–"),
+            `Limited corroboration` = if_else(limited_corroboration, "Yes", "")) |>
+  gt() |>
+  fmt_date(Date, date_style = "yMMMd") |>
+  fmt_number(`Robbery Score`, decimals = 3) |>
+  fmt_percent(`P(loser wins)`, decimals = 0) |>
+  data_color(`Robbery Score`, palette = c("#F2C4CB", "#8E0C22"), domain = c(0.75, 1)) |>
+  tab_style(cell_text(size = "small"), cells_body(columns = Cards)) |>
+  opt_row_striping()
+```
+
+## The top 10, explained
+
+```{r}
+#| label: top10
+#| results: asis
+top10 <- head(top25, 10)
+for (i in seq_len(nrow(top10))) {
+  x <- top10[i, ]
+  media <- if (coalesce(x$media_scored, 0) > 0)
+    sprintf(" Media: %d of %d scorecards had %s winning.", x$media_for_loser, x$media_scored, x$loser_name) else
+    " No media scorecards are recorded for this fight."
+  flag <- if (x$limited_corroboration) " *Limited corroboration: treat with extra caution.*" else ""
+  cat(sprintf("**%d. %s** (%s, %s; %s decision). Robbery Score **%.3f**. %s%s%s\n\n",
+              i, fight_label(x$winner_name, x$loser_name), x$event, format(x$date, "%b %d, %Y"),
+              tolower(x$decision_type), x$robbery_score, x$why, media, flag))
+}
+```
+
+::: {.callout-tip appearance="simple"}
+## Reading a high score
+A high score with **strong media support** for the loser (for example 80–100% of media scorecards) is the clearest kind of disagreement. A high score with **little media support** usually means the people watching saw something the counts don't record: damage, power, or which strikes actually landed clean. Those cases are listed on the [Validation](validation.qmd) page.
+:::

@@ -1,0 +1,118 @@
+---
+title: "Validation"
+subtitle: "Does the Robbery Score agree with people who watched the fights?"
+---
+
+```{r}
+#| label: setup
+#| include: false
+source("_common.R")
+md <- rd("media_disagree"); fv <- rd("face_validity"); fc <- rd("fight_calibration")
+mc <- rd("market_calibration")
+```
+
+A score is only useful if it lines up with independent evidence. The main test uses **media scorecards**: journalists who scored the same fights round by round and published their cards on MMADecisions. The model never sees them.
+
+## 1. Media scorecards
+
+```{r}
+#| label: media
+#| fig-height: 6
+plot_media_scatter(ri, md, fx("media_r"), fx("media_r_lo"), fx("media_r_hi"))
+```
+
+Across `r cm(fx("media_n"))` decisions with at least 5 media scorecards, the Robbery Score correlates with the share of media scoring the fight for the official loser at **r = `r num(fx("media_r"), 2)`** (95% bootstrap CI `r num(fx("media_r_lo"), 2)`–`r num(fx("media_r_hi"), 2)`; Spearman `r num(fx("media_rho"), 2)`).
+
+```{r}
+#| label: agreement-table
+tibble::tibble(
+  Comparison = c("Official result vs. media majority", "Stats model's favourite vs. media majority",
+                 "Stats model's favourite vs. official result"),
+  Agreement = c(fx("official_agrees_media"), fx("model_agrees_media"), fx("model_agrees_official"))) |>
+  gt() |> fmt_percent(Agreement, decimals = 1) |>
+  tab_header(title = "Who agrees with whom?", subtitle = "Decisions with a clear media majority")
+```
+
+The statistics-only model agrees with the media almost as often as the judges do.
+
+### Where the model and the media disagree
+
+These cases are interesting in their own right. **They are not accusations, and some may reflect stat-recording errors.**
+
+```{r}
+#| label: disagree
+show_md <- function(type_, title_) {
+  md |> filter(type == type_) |> head(10) |>
+    transmute(Date = date, Bout = fight_label(winner_name, loser_name), Decision = decision_type,
+              `Robbery Score` = robbery_score, `Media for loser` = paste0(media_for_loser, " of ", media_scored)) |>
+    gt() |> fmt_date(Date, date_style = "yMMMd") |> fmt_number(`Robbery Score`, decimals = 3) |>
+    tab_header(title = title_) |> opt_row_striping()
+}
+show_md("model_not_media", "The stats favour the loser, but the media sided with the winner")
+```
+
+These are the clearest cases of what statistics **can't see**: damage, power, or which strikes really landed clean. When nearly every media member agrees with the judges against the counts, the counts are likely missing something.
+
+```{r}
+#| label: disagree2
+show_md("media_not_model", "The media favoured the loser, but the stats backed the winner")
+```
+
+In these fights the media saw the loser winning even though the counted stats favoured the winner. Possible reasons include pressure, effective aggression, the quality of strikes, or occasionally an error in the recorded statistics.
+
+::: {.callout-note appearance="simple"}
+**Worth a manual check:** in Said Nurmagomedov vs. Justin Scoggins (2018), UFCStats records Nurmagomedov out-landing Scoggins 65–32 in significant strikes, yet every media scorecard had Scoggins winning. A disagreement that stark may point to a recording issue in the strike counts rather than a judging question.
+:::
+
+## 2. Round-level agreement
+
+Media members publish whole-fight scores rather than round-by-round scores, so round-level agreement can only be measured against the judges.
+
+```{r}
+#| label: rounds
+tibble::tibble(
+  Comparison = c("Model's round winner vs. the judges' majority", "… rounds the judges scored unanimously",
+                 "… rounds the judges split", "Model vs. an individual judge",
+                 "Benchmark: one judge vs. the other two (when those two agree)",
+                 "Model vs. the other two judges (when they agree)"),
+  Agreement = c(fx("round_vs_majority"), fx("round_vs_majority_unan"), fx("round_vs_majority_split"),
+                fx("round_vs_individual"), fx("judge_vs_other_two"), fx("model_vs_other_two"))) |>
+  gt() |> fmt_percent(Agreement, decimals = 1) |>
+  tab_header(title = "How often the model picks the judges' round winner",
+             subtitle = paste0(cm(fx("round_rounds")), " rounds scored by three judges; out-of-fold predictions"))
+```
+
+The model comes close to, but falls a little below, how well one judge matches two others.
+
+## 3. Face validity: widely debated decisions
+
+A sanity check: decisions that were widely argued about at the time should mostly score high. (This list is hand-picked from general knowledge and is never used by the model.)
+
+```{r}
+#| label: face
+fv |> arrange(desc(robbery_score)) |>
+  transmute(Bout = fight_label(winner_name, loser_name), Year = format(date, "%Y"), Decision = decision_type,
+            `Robbery Score` = robbery_score, Tier = tier, `Rank (of all decisions)` = rank,
+            `Media for loser` = media_loser_share, `Media n` = media_scored) |>
+  gt() |> fmt_number(`Robbery Score`, decimals = 3) |> fmt_percent(`Media for loser`, decimals = 0) |>
+  opt_row_striping()
+```
+
+`r sum(fv$pct_rank >= 0.84)` of `r nrow(fv)` rank in the top 16% of all decisions. The exceptions are informative: where the counted stats back the winner but most media didn't, the disagreement is about things the statistics don't record.
+
+## 4. Calibration
+
+```{r}
+#| label: fight-cal
+#| fig-height: 6
+#| out-width: 70%
+plot_fight_calibration(fc)
+```
+
+The simulation is reasonably calibrated, but red corners win somewhat more often than the stats alone predict. That gap is examined on the [Judges](judges.qmd) page. For comparison, closing betting lines (de-vigged) are close to perfectly calibrated:
+
+```{r}
+#| label: market-cal
+mc |> transmute(`Favourite's market probability` = bin, Fights = n, Priced = market, `Actually won` = observed) |>
+  gt() |> fmt_percent(c(Priced, `Actually won`), decimals = 1) |> fmt_number(Fights, decimals = 0)
+```

@@ -1,0 +1,77 @@
+---
+title: "The UFC Robbery Detector"
+subtitle: "Which UFC decisions did the statistics say went to the wrong fighter?"
+toc: false
+---
+
+```{r}
+#| label: setup
+#| include: false
+source("_common.R")
+top <- ri_nd |> arrange(desc(robbery_score))
+t1 <- top[1, ]
+rounds <- rd("featured_rounds"); judges <- rd("featured_judges")
+le <- rd("logit_effects"); cr <- rd("criteria_rates"); tb <- rd("tiers")
+rob_n <- tb$n[tb$tier == "Robbery"]; rob_share <- tb$share[tb$tier == "Robbery"]
+kd_pre <- cr$head_equiv[cr$feature == "d_kd" & cr$era == "Before 2017"]
+kd_post <- cr$head_equiv[cr$feature == "d_kd" & cr$era == "2017-2026"]
+td_pre <- cr$head_equiv[cr$feature == "d_td_l" & cr$era == "Before 2017"]
+td_post <- cr$head_equiv[cr$feature == "d_td_l" & cr$era == "2017-2026"]
+te <- rd("ten_eight_by_year") |> filter(rounds >= 100)
+te_peak <- te |> slice_max(rate, n = 1)
+fv <- rd("face_validity")
+```
+
+::: {.lede}
+Every UFC fight that goes to the judges ends with three scorecards, and sometimes a lot of arguing. This project asks a narrower, answerable question: **given everything the statistics recorded in each round, how likely was the declared winner to win?** When that probability is very low, the stats and the judges strongly disagree. That's what we call a *robbery*.
+:::
+
+::: {.callout-note appearance="simple"}
+## What "robbery" means here
+A **robbery** is a decision in which the officially declared winner had a low probability of winning given the round-by-round statistics of the fight, as estimated by a model trained on how judges actually score rounds.
+
+**Robbery Score = 1 − P(declared winner wins the decision | fight stats).** 0 means the stats fully support the result, and values near 1 mean the stats strongly favoured the fighter who lost.
+
+It is **never an accusation** of misconduct. Statistics can't see everything a judge sees: damage, power, octagon control and aggression. A high score means "the numbers disagree", not "the judges cheated".
+:::
+
+## The biggest disagreement on record
+
+```{r}
+#| label: signature
+#| fig-height: 8.5
+#| fig-alt: "Round-by-round breakdown of the decision with the highest Robbery Score"
+plot_fight_breakdown(t1, filter(rounds, fight_url == t1$fight_url), filter(judges, fight_url == t1$fight_url))
+```
+
+`r fight_label(t1$winner_name, t1$loser_name)` (`r format(t1$date, "%B %Y")`) has the highest Robbery Score of all `r cm(nrow(ri_nd))` decisions: `r num(t1$robbery_score, 3)`. `r t1$why`
+
+## Headline findings
+
+::: {.finding}
+**1 in `r round(1 / rob_share)` decisions is a statistical "robbery".** Of `r cm(nrow(ri_nd))` UFC decisions from `r min(ri_nd$year)` to `r max(ri_nd$year)`, `r cm(rob_n)` (`r pct(rob_share, 0.1)`) have a Robbery Score of at least 0.75. Decisions people still argue about land near the top: `r sum(fv$pct_rank >= 0.84)` of `r nrow(fv)` widely debated decisions are in the top 16%. [See the leaderboard →](leaderboard.qmd)
+:::
+
+::: {.finding}
+**What judges reward:** a knockdown is worth about `r num(fx("kd_head_equiv"), 0)` significant head strikes, a minute of control about `r num(fx("ctrl_head_equiv"), 1)`, and a takedown about `r num(fx("td_head_equiv"), 1)`. A body strike counts `r num(fx("body_head_equiv"), 2)` of a head strike and a leg strike `r num(fx("leg_head_equiv"), 2)`. Shooting for a takedown and missing *costs* a fighter (`r num(fx("tdfail_head_equiv"), 2)`). [See the methodology →](methodology.qmd#what-judges-reward)
+:::
+
+::: {.finding}
+**The model agrees with the media almost as often as the judges do.** Where most media scorecards agreed, the official result matched them `r pct(fx("official_agrees_media"))` of the time and the stats-only model `r pct(fx("model_agrees_media"))`. The Robbery Score correlates with the share of media scoring the fight for the loser at r = `r num(fx("media_r"), 2)`. [See the validation →](validation.qmd)
+:::
+
+::: {.finding}
+**Judges lean slightly toward the red corner and the betting favourite.** On a round the stats call 50/50, judges give it to the red corner `r pts(fx("red_pts_full"))` percentage points more often than the stats alone predict, and to a −300 betting favourite `r pts(fx("fav_pts"))` points more often. Individual judges, adjusted for how close their rounds were, agree with the stats at very similar rates. [See the judges →](judges.qmd)
+:::
+
+::: {.finding}
+**The 2017 judging criteria changed what judges reward, but not how often decisions go "wrong".** A knockdown went from about `r num(kd_pre, 0)` to `r num(kd_post, 0)` head strikes and a takedown from `r num(td_pre, 1)` to `r num(td_post, 1)`. 10-8 rounds peaked at `r pct(te_peak$rate, 0.1)` in `r te_peak$year` and have since faded. Robbery rates show no clear change. [See the 2017 analysis →](criteria-2017.qmd)
+:::
+
+## How it works, in one paragraph
+
+Round-by-round statistics come from **UFCStats**, and every judge's round-by-round scorecard plus media scorecards come from **MMADecisions** (`r cm(fx("n_decisions"))` decisions, `r cm(fx("n_judge_rounds"))` judge-round scores, `r cm(fx("n_media_scores"))` media scores). A model learns how judges turn a round's stats into a 10-9, using only that round's numbers and treating both corners identically. The model's round probabilities feed a simulation of 10,000 sets of three *correlated* judges for every fight, which gives the probability that each fighter wins the decision. [Full methodology →](methodology.qmd)
+
+::: {.small-note}
+Data frozen at `r format(fx_date("freeze_date"), "%B %d, %Y")`. Built in R with `targets`; every number on this site is computed from the data at render time.
+:::

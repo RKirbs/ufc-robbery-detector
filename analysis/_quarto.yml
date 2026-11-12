@@ -1,0 +1,60 @@
+project:
+  type: website
+  output-dir: ../docs
+  execute-dir: project
+  resources:
+    - .nojekyll
+  render:
+    - index.qmd
+    - leaderboard.qmd
+    - fight-lookup.qmd
+    - judges.qmd
+    - criteria-2017.qmd
+    - validation.qmd
+    - methodology.qmd
+
+website:
+  title: "The UFC Robbery Detector"
+  description: "Which UFC decisions did the statistics say went to the wrong fighter?"
+  page-navigation: true
+  navbar:
+    left:
+      - href: index.qmd
+        text: Home
+      - href: leaderboard.qmd
+        text: Leaderboard
+      - href: fight-lookup.qmd
+        text: Fight lookup
+      - href: judges.qmd
+        text: Judges
+      - href: criteria-2017.qmd
+        text: 2017 criteria
+      - href: validation.qmd
+        text: Validation
+      - href: methodology.qmd
+        text: Methodology
+  page-footer:
+    left: "Data: UFCStats (via Greco1899 mirror), MMADecisions, BestFightOdds · Analysis by Rob Kirby"
+    right: "A *robbery* here means strong disagreement between the result and the statistics, never an accusation."
+
+format:
+  html:
+    theme:
+      light: [cosmo, styles.scss]
+    toc: true
+    toc-depth: 2
+    code-fold: true
+    code-summary: "Show code"
+    code-tools: false
+    fig-width: 9
+    fig-height: 5.5
+    fig-dpi: 150
+    df-print: kable
+    smooth-scroll: true
+    link-external-newwindow: true
+
+execute:
+  echo: true
+  warning: false
+  message: false
+  freeze: false

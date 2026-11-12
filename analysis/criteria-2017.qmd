@@ -1,0 +1,65 @@
+---
+title: "The 2017 Judging Criteria"
+subtitle: "Did the rule change change how fights are scored?"
+---
+
+```{r}
+#| label: setup
+#| include: false
+source("_common.R")
+cr <- rd("criteria_rates"); ci <- rd("criteria_interactions"); le <- rd("logit_effects")
+te <- rd("ten_eight_by_year"); rby <- rd("robbery_by_year")
+labs_map <- setNames(le$label, le$feature)
+g <- \(f, e) cr$head_equiv[cr$feature == f & cr$era == e]
+te100 <- te |> filter(rounds >= 100)
+te_peak <- te100 |> slice_max(rate, n = 1)
+te_last <- te100 |> slice_max(year, n = 1)
+```
+
+## What changed
+
+In August 2016 the Association of Boxing Commissions (ABC) approved revised scoring criteria for MMA's Unified Rules (recorded in the rules as amended on August 3, 2016), effective **January 1, 2017**. The update put **effective striking and grappling** (impact, damage) first, with effective aggressiveness and octagon control as tiebreakers, and clarified when a **10-8** round should be given. State commissions adopted the changes on their own schedules, so 2017 is partly a transition year.
+
+Sources: [Bloody Elbow (2017)](https://bloodyelbow.com/2017/01/02/2017-unified-rules-10-8-judging-criteria-explained-hinds-bell-mma-interview), [Bloody Elbow (2018)](https://bloodyelbow.com/2018/02/01/be-analytics-crunching-numbers-2017-10-8-judging-scoring-criteria-ufc-mma-editorial), [BJPenn.com](https://bjpenn.com/mma-news/mma-judging-criteria/new-mma-judging-criteria-finalized-implemented-2017), [Uproxx](https://uproxx.com/?p=1706043), [ABC MMA Officials Handbook](https://abcboxing.com/wp-content/uploads/2025/02/ABC-MMA-Officials-Handbook.pdf).
+
+## Did the weights judges give to each stat change?
+
+We fit the round model with every statistic interacted with a post-2017 indicator, with standard errors clustered by fight.
+
+```{r}
+#| label: weights
+#| fig-height: 6.5
+plot_criteria_weights(cr, labs_map, fx("criteria_wald_p"))
+```
+
+The joint test that *nothing* changed is rejected (χ² = `r num(fx("criteria_wald_chi2"), 1)` on `r fx("criteria_wald_df")` df, p = `r format.pval(fx("criteria_wald_p"), digits = 2)`). The same holds when the 2017 transition year is excluded (p = `r format.pval(fx("criteria_wald_p_no2017"), digits = 2)`). The shifts point the way the new criteria describe:
+
+- A **knockdown** went from about `r num(g("d_kd", "Before 2017"), 1)` to `r num(g("d_kd", "2017-2026"), 1)` head strikes.
+- A **takedown** fell from about `r num(g("d_td_l", "Before 2017"), 1)` to `r num(g("d_td_l", "2017-2026"), 1)`.
+- **Ground strikes** picked up a premium over distance strikes.
+- **Control time** stayed about the same: `r num(g("d_ctrl_min", "Before 2017"), 1)` → `r num(g("d_ctrl_min", "2017-2026"), 1)` per minute.
+
+In short, impact counts for more, and a takedown on its own for less.
+
+## Did 10-8 rounds become more common?
+
+```{r}
+#| label: ten-eight
+plot_ten_eight(te)
+```
+
+The raw 10-8 rate rose from `r pct(fx("te_pre"), 0.1)` before 2017 to `r pct(fx("te_post"), 0.1)` after. Holding the round's statistics fixed, the odds of a 10-8 were `r num(fx("te_or_adj"), 1)`× higher after the update (95% CI `r num(fx("te_or_adj_lo"), 1)`–`r num(fx("te_or_adj_hi"), 1)`). The year-by-year pattern matters more than the average: 10-8s peaked at `r pct(te_peak$rate, 0.1)` in `r te_peak$year`, then fell back to `r pct(te_last$rate, 0.1)` by `r te_last$year`.
+
+## Did robberies become more or less common?
+
+```{r}
+#| label: robbery-trend
+plot_robbery_by_year(rby)
+```
+
+Comparing 2011–2016 with 2017–2026 (years with good scorecard coverage), the Robbery-tier share went from `r pct(fx("rob_pre"), 0.1)` to `r pct(fx("rob_post"), 0.1)` (odds ratio `r num(fx("rob_or"), 2)`, 95% CI `r num(fx("rob_or_lo"), 2)`–`r num(fx("rob_or_hi"), 2)`). The Questionable-or-worse share's odds ratio is `r num(fx("q_or"), 2)` (`r num(fx("q_or_lo"), 2)`–`r num(fx("q_or_hi"), 2)`). **There's no clear change.**
+
+::: {.callout-warning appearance="simple"}
+## Associations, not causes
+Plenty else changed around 2017: fighter styles (more wrestling-heavy and volume-striking approaches), the mix of commissions and venues (including the UFC Apex era), and the pool of judges. These comparisons show what changed *alongside* the new criteria, not what the criteria caused.
+:::
