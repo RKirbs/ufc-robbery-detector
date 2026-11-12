@@ -30,7 +30,12 @@ log_msg("Year pages: %d events listed for %d-%d", nrow(events), min(years), max(
 
 # Keep events within +/-1 day of a UFC event date (time zones) and up to the freeze date.
 near_ufc <- vapply(events$event_date, \(d) any(abs(as.numeric(d - ufc_dates)) <= 1), logical(1))
-cand <- events |> filter(near_ufc, event_date <= FREEZE_DATE, event_date >= START_DATE)
+# Also skip events whose names show another promotion (saves ~500 requests).
+# Unknown names are kept; the UFC logo on the event page is the final check.
+NON_UFC <- "^(Bellator|CW|CWFC|CWFN|PFL|KSW|Invicta|Strikeforce|WSOF|Boxing|WEC|ShoMMA|Cage Warriors)\\b"
+cand <- events |>
+  filter(near_ufc, event_date <= FREEZE_DATE, event_date >= START_DATE,
+         !str_detect(event_name, NON_UFC))
 log_msg("Candidate events (date matches a UFC event): %d", nrow(cand))
 
 # 3. Event pages: confirm UFC via the logo and collect decision links.
