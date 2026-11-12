@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /cnadm/
+
+Sitemap: https://www.bestfightodds.com/sitemap.xml
+Sitemap: https://www.bestfightodds.com/news-sitemap.xml

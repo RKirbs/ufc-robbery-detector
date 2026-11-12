@@ -216,6 +216,7 @@ fighter_experience <- function(greco) {
 # league-wide shift toward fighter A (listed first = red corner); the judge
 # random intercept gives each judge's own lean, shrunk toward the average.
 corner_effects <- function(jt) {
+  jt <- filter(jt, date >= CORNER_KNOWN_FROM)   # fighter order = corner only from here
   m0 <- glm(ya ~ 1 + logit_p, family = binomial(), data = jt)
   m1 <- lme4::glmer(ya ~ 1 + title_fight + logit_p + d_exp + d_winrate + (1 | judge_key),
                     data = jt, family = binomial(), control = lme4::glmerControl(optimizer = "bobyqa"))
@@ -223,7 +224,7 @@ corner_effects <- function(jt) {
   fe <- lme4::fixef(m1); se <- sqrt(diag(as.matrix(vcov(m1))))
   re <- lme4::ranef(m1, condVar = TRUE)$judge_key
   re_se <- sqrt(attr(re, "postVar")[1, 1, ])
-  by_era <- jt |> mutate(era = if_else(post_2017, "2017-2026", "2006-2016")) |>
+  by_era <- jt |> mutate(era = if_else(post_2017, "2017-2026", "2010-2016")) |>
     group_by(era) |>
     group_modify(\(d, k) {
       m <- glm(ya ~ 1 + title_fight + logit_p + d_exp + d_winrate, family = binomial(), data = d)
@@ -256,7 +257,9 @@ recency_test <- function(robbery_index, round_probs) {
     inner_join(edges, by = "fight_url") |>
     mutate(ya = as.numeric(winner == "a"),
            logit_sim = qlogis(pmin(pmax(p_a / (p_a + p_b), 1e-4), 1 - 1e-4)))
-  m <- glm(ya ~ logit_sim + first_edge + last_edge, family = binomial(), data = d)
+  # No intercept: with odd (A-minus-B) covariates the fit is then identical
+  # whichever fighter is listed first, so it is safe for the winner-first years.
+  m <- glm(ya ~ 0 + logit_sim + first_edge + last_edge, family = binomial(), data = d)
   tibble::tibble(term = names(coef(m)), est = coef(m), se = sqrt(diag(vcov(m))),
                  p = summary(m)$coefficients[, 4], n = nrow(d))
 }

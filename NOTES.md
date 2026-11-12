@@ -74,5 +74,15 @@
 - Face validity uses a hand-made list of widely debated decisions (`DEBATED_DECISIONS` in R/08). It's for checking only, never a model input.
 - To check manually: Said Nurmagomedov vs. Scoggins (2018). UFCStats has Nurmagomedov out-landing Scoggins 65–32, but all 17 media scored Scoggins. This could be a stat-recording error.
 
+- **2026-11-12. Data bug fixed: UFCStats fighter order.** Through UFC 110 (2010-02-20) the WINNER is listed first (fighter A won 100% of fights 2001–2009). From UFC Live: Vera vs. Jones (2010-03-21) on, the red corner is listed first.
+  - All corner-dependent analyses now use only fights from `CORNER_KNOWN_FROM` = 2010-03-21. The recency test is corner-symmetric (no intercept).
+  - Corner-symmetric results (round model, simulation, Robbery Index, judge agreement and tendencies, 2017 analysis) are unaffected.
+  - Corrections: red-corner lean +5.6 → +4.7 points; 2010–16 +6.4 (was "+8.0 for 2006–16"); Phase 4 red win share vs. simulation 61.4%/57.1% → 57.7%/54.4%. Correction notes were added to the Phase 2–5 reports.
+- **2026-11-12. Phase 6 (odds) done** (Rob approved).
+  - BestFightOdds: robots.txt allows crawling and the terms are only a disclaimer (saved in phase0_audit/). 1,029 fighter pages chosen by set cover, cached; 94.7% of decisions since 2007 have closing odds.
+  - Favorite at −300: +6.5 points on a 50/50 round. The red-corner lean drops 4.9 → 3.7 points with the market control.
+  - Card premium: fighters with generous past decisions underperform their odds in early finishes (exploratory).
+- Site decision (Rob, "whatever you think is best"): present the model-vs-media disagreements with the standard caveat. Flag Nurmagomedov–Scoggins explicitly as possibly a stat-recording issue.
+
 ## Open questions
 - Use the BestFightOdds odds extension (Phase 6)? Ask before scraping (about 30–45 min).

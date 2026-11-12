@@ -25,7 +25,7 @@ Every number below comes from `Rscript scripts/phase3_report.R`, run after `targ
 - **Corner symmetry:**
   - The training rows are mirrored, so every round appears once from each fighter's side.
   - Every prediction is symmetrised: swapping the fighters gives exactly 1 − p (checked numerically).
-  - So no model can learn "red corner wins". In the raw data the red corner wins 58% of judge-rounds. That gets tested in Phase 5, controlling for stats.
+  - So no model can learn "red corner wins". In the raw data the red corner wins 58% of judge-rounds. That gets tested in Phase 5, controlling for stats. *(Correction, 2026-11-12: UFCStats lists the **winner** first through UFC 110 (Feb 2010), and the red corner first only from March 21, 2010. Red-corner figures in this report that include earlier fights are therefore biased upward; see PHASE6_REPORT.md section 1. Corner-symmetric results are unaffected.)*
 - **Validation:**
   - (a) Grouped 5-fold cross-validation by fight on the training years, used for tuning.
   - (b) A **time-based test**: train on 2006–2019 (17,096 judge-rounds, 1,911 fights), test on 2020–2026 (16,348 judge-rounds, 1,709 fights).

@@ -122,5 +122,19 @@ list(
   tar_target(criteria_era, criteria_era_model(model_data)),
   tar_target(criteria_era_no2017, criteria_era_model(model_data, drop_2017 = TRUE)),
   tar_target(ten_eight_era, ten_eight_trend(ten_eight_data)),
-  tar_target(robbery_time, robbery_trend(robbery_index))
+  tar_target(robbery_time, robbery_trend(robbery_index)),
+
+  # ---- Stage 9: betting odds (Phase 6) ---------------------------------------------
+  # Cached BestFightOdds fighter pages (fetched by scripts/run_bfo_scrape.R).
+  tar_target(bfo_files, list.files(file.path(BFO_RAW, "fighters"), "\\.html$", full.names = TRUE),
+             cue = tar_cue(mode = "always")),
+  tar_target(bfo_raw, bfo_parse_all(bfo_files)),
+  tar_target(bfo_m, bfo_matchups(bfo_raw)),
+  tar_target(odds, link_odds(bfo_m, ufc_fights)),
+  tar_target(odds_file, write_parquet_target(odds, "data/interim/odds.parquet"), format = "file"),
+  tar_target(odds_cov, odds_coverage(odds, fight_table, ufc_fights)),
+  tar_target(fav_effects, favourite_effects(judge_table, odds)),
+  tar_target(decision_risk, decision_risk_test(ufc_fights, odds, robbery_index)),
+  tar_target(robbery_market, robbery_vs_market(robbery_index, odds)),
+  tar_target(red_market, red_vs_market(ufc_fights, odds))
 )

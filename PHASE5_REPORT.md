@@ -87,12 +87,13 @@ All judge-level results use judges with at least **100 rounds** (49 judges) and 
 - The estimates range from about 0.72× to 1.27× the league-average grappling emphasis. The intervals are wide; the chart shows them.
 
 ### 2.3 Systematic patterns, controlling for round stats (`p5_red_corner.png`)
-**Red corner** (UFCStats lists the red-corner fighter first; we rely on that convention):
-- On a round the stats call 50/50, judges give it to the red corner **4.5 points** more often (simple model, CIs clustered by fight).
-- Adding experience and record controls makes it **5.6 points** (95% CI about 4.4–6.8).
-- **The lean has shrunk:** +8.0 points in 2006–2016, +3.0 points in 2017–2026.
-- Judges differ only modestly: 4 of 49 have a lean whose interval excludes the average.
-- *Caution:* red corners are usually the favorite, the champion or the more established fighter. Without betting odds (Phase 6) we can't tell "red corner" apart from "favorite" or from things stats can't see.
+**Red corner** (corrected 2026-11-12: only fights from March 21, 2010 on, because before that UFCStats lists the winner first):
+- On a round the stats call 50/50, judges give it to the red corner **4.0 points** more often (simple model, CIs clustered by fight).
+- Adding experience and record controls makes it **4.7 points**.
+- **The lean has shrunk:** +6.4 points in 2010–2016, +3.0 points in 2017–2026.
+- Judges differ only modestly: 3 of 48 have a lean whose interval excludes the average.
+- Phase 6 adds the betting line as a control. The red-corner lean drops to +3.7 points but stays clearly above zero.
+- *(The original version of this section reported +5.6 points overall and +8.0 points for 2006–2016. It wrongly included pre-2010 fights where fighter A is the winner.)*
 
 **Record:**
 - Judges lean toward the fighter with the better prior UFC record beyond what the round stats show. A 30-point gap in prior win rate is worth about 4 points on a 50/50 round.
@@ -108,7 +109,7 @@ All judge-level results use judges with at least **100 rounds** (49 judges) and 
 - Under round-by-round 10-point-must scoring there's little room for recency anyway.
 - The first round shows a weak negative effect (p = 0.01). It counts slightly *less* than the model assumes. That's worth noting, but it isn't strong.
 
-**Betting favorite:** this needs odds data, so it's in Phase 6.
+**Betting favorite:** see PHASE6_REPORT.md.
 
 ## 3. The 2017 judging-criteria update
 **Source check:**

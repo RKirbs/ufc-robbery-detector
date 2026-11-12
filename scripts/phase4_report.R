@@ -34,15 +34,15 @@ print(ten_eight_corr)
 print(broom::tidy(ten_ten_model))
 
 hr("4. Fight-level checks (non-draw decisions)")
-fl <- ri |> select(fight_url, winner, p_a, p_b, p_draw, p_winner) |>
+fl <- ri |> select(fight_url, date, winner, p_a, p_b, p_draw, p_winner) |>
   left_join(fight_direct |> select(fight_url, p_direct), by = "fight_url") |>
   mutate(p_direct_winner = if_else(winner == "a", p_direct, 1 - p_direct))
 cat("Simulation vs. direct fight model, correlation of P(A wins):",
     round(cor(fl$p_a / (fl$p_a + fl$p_b), fl$p_direct), 3), "\n")
 print(bind_rows(simulation = score_fight_probs(fl$p_winner),
                 direct_model = score_fight_probs(fl$p_direct_winner), .id = "model"))
-cat("\nCalibration of P(declared winner wins), simulation:\n")
-cal <- fl |> mutate(pa = p_a, ya = winner == "a", bin = cut(pa, seq(0, 1, 0.1), include.lowest = TRUE)) |>
+cat("\nCalibration of P(fighter A wins), corner-known fights only (from", format(CORNER_KNOWN_FROM), "):\n")
+cal <- fl |> filter(date >= CORNER_KNOWN_FROM) |> mutate(pa = p_a, ya = winner == "a", bin = cut(pa, seq(0, 1, 0.1), include.lowest = TRUE)) |>
   group_by(bin) |> summarise(n = n(), pred = mean(pa), obs = mean(ya))
 print(cal)
 cat("\nSplit decisions: predicted rate", round(mean(robbery_index$p_split), 3),
@@ -79,8 +79,9 @@ print(med |> mutate(band = cut(robbery_score, c(0, 0.25, 0.5, 0.6, 0.7, 0.75, 0.
                   media_majority_for_loser = mean(media_majority_loser)))
 cat("Pearson r (score vs media loser share):", round(cor(med$robbery_score, med$media_loser_share), 3), "\n")
 cat("Deduction fights:", sum(!is.na(ri$ded_note)), "| of which robbery-tier:", sum(!is.na(ri$ded_note) & ri$tier == "Robbery"), "\n")
-cat("Mean simulated P(A wins) vs actual A win share (non-draws):",
-    round(mean(ri$p_a), 3), "vs", round(mean(ri$winner == "a"), 3), "\n")
+rk <- filter(ri, date >= CORNER_KNOWN_FROM)
+cat("Corner-known fights: mean simulated P(red wins) vs actual red win share (non-draws):",
+    round(mean(rk$p_a), 3), "vs", round(mean(rk$winner == "a"), 3), "(n =", nrow(rk), ")\n")
 
 hr("7. Sensitivity: glmnet round model")
 sens <- ri |> select(fight_url, winner, robbery_score, tier) |>
@@ -170,7 +171,7 @@ p3 <- cal |>
   scale_y_continuous(labels = scales::percent, limits = c(0, 1)) +
   coord_equal() +
   labs(title = "Fight-level calibration of the simulation",
-       subtitle = "Simulated P(fighter A wins) vs. how often A actually won the decision.",
+       subtitle = "Simulated P(red corner wins) vs. how often the red corner won the decision\n(fights from March 2010 on, when UFCStats lists the red corner first).",
        x = "Simulated probability", y = "Observed share", caption = SOURCE_CAPTION) +
   theme_robbery()
 save_fig(p3, "p4_fight_calibration", width = 6, height = 6)

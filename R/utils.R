@@ -16,6 +16,11 @@ FREEZE_DATE <- as.Date("2026-11-07")
 START_DATE  <- as.Date("2001-01-01")
 # Pinned commit of the Greco1899/scrape_ufc_stats mirror of UFCStats.
 GRECO_SHA   <- "c742842f29466758fedc3906dbad28d6d320a8da"
+# Fighter order in UFCStats: through UFC 110 (2010-02-20) the WINNER is listed
+# first; from UFC Live: Vera vs. Jones (2010-03-21) the red corner is listed
+# first. Any analysis where "fighter A = red corner" matters uses only fights
+# from this date on. Corner-symmetric analyses are unaffected.
+CORNER_KNOWN_FROM <- as.Date("2010-03-21")
 
 # Honest user agent with no personal contact details.
 SCRAPER_UA <- "ufc-robbery-detector/0.1 (academic research project; polite, cached, low-rate)"

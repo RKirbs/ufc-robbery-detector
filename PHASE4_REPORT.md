@@ -42,9 +42,10 @@ Treating judges as independent would overstate split rounds by about 60% and mak
   | **Totals-only fights (never used in training)** | 1,935 | **85.2%** | 0.78 |
 
   The model works just as well on the older, never-trained-on fights.
-- **Fight-level calibration** (`p4_fight_calibration.png`):
-  - Fighter A (red corner) won 61.4% of decisions, but the simulation, which is corner-symmetric by design, averages 57.1%. So in the middle probability bands, red corners win about 6–11 points more often than the stats alone predict.
-  - This is the red-corner / favorite question for Phase 5. It isn't a finding yet: red corners are usually favorites, champions or the more established fighter, and some of that edge may be things stats can't see.
+- **Fight-level calibration** (`p4_fight_calibration.png`; corrected 2026-11-12):
+  - Using only fights from March 21, 2010 onward (the only ones where UFCStats lists the red corner first), the red corner won 57.7% of decisions, but the corner-symmetric simulation averages 54.4%.
+  - So in the middle probability bands, red corners win about 5–7 points more often than the stats alone predict.
+  - This is examined in Phases 5 and 6. The original version of this paragraph (61.4% vs. 57.1%) wrongly included 2001–2010 fights, where fighter A is the winner.
 
 ## 4. Robbery Score distribution (4,049 decisions; the 60 draws are reported separately)
 Quantiles: median 0.083, 75th percentile 0.31, 90th 0.61, 95th 0.77, 99th 0.94.

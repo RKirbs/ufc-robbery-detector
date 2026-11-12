@@ -47,7 +47,7 @@ Every number below comes from `Rscript scripts/phase2_report.R`, run after `targ
 - 46 of 51,355 media picks can't be assigned to a fighter (for example, both fighters share a surname). These are dropped.
 - 4 very old fights have placeholder judge totals ("1-0"). These are dropped from analyses that use totals.
 - **Sanity check:** judges give the round to the fighter who landed more significant strikes in **77.1%** of rounds. That's sensible and shows what the naive baseline will look like.
-- **Descriptive only:** red corner (fighter A) wins 56.8% of non-even judge rounds. This is *not* a finding, because red corners are usually the favourite or the champion. It gets tested properly in Phase 5, controlling for stats.
+- **Descriptive only:** red corner (fighter A) wins 56.8% of non-even judge rounds. This is *not* a finding, because red corners are usually the favourite or the champion. It gets tested properly in Phase 5, controlling for stats. *(Correction, 2026-11-12: UFCStats lists the **winner** first through UFC 110 (Feb 2010), and the red corner first only from March 21, 2010. Red-corner figures in this report that include earlier fights are therefore biased upward; see PHASE6_REPORT.md section 1. Corner-symmetric results are unaffected.)*
 
 ## 6. Design decision needed: partial round-score coverage before 2013
 Judge **round** scores exist for 3,448 of 4,109 decisions (84%), and are thin before 2011. Robbery scores need only round **stats** as inputs, so every decision still gets one. The question is what the model is trained on:
