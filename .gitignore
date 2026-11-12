@@ -21,7 +21,7 @@ data/interim/
 # Quarto build artifacts (the rendered site goes to docs/, which IS committed)
 analysis/.quarto/
 analysis/_freeze/
-*_files/
+analysis/*_files/
 /.quarto/
 
 # OS / editor
