@@ -160,6 +160,24 @@ parse_all_decisions <- function(files) {
        media        = map_dfr(parsed, "media"))
 }
 
+# Point deductions. Pages note them as "Swick was deducted 1 point in round 3:
+# Grabbing the Cage". Judges' round scores on MMADecisions already include the
+# deduction, so we record them to (a) restore each judge's own round call for
+# modeling and (b) apply them to simulated cards.
+mmad_parse_deductions <- function(files) {
+  map_dfr(files, \(f) {
+    s <- readr::read_file(f)
+    if (!str_detect(s, regex("was deducted", ignore_case = TRUE))) return(NULL)
+    t <- s |> str_replace_all("<[^>]+>", " | ") |> str_squish()
+    m <- str_match_all(t, regex("([^|]{1,60}?) was deducted (\\d+) points? in round (\\d+):?\\s*\\|?\\s*([^|]*)",
+                                ignore_case = TRUE))[[1]]
+    if (!nrow(m)) return(NULL)
+    tibble(decision_id = as.integer(tools::file_path_sans_ext(basename(f))),
+           who = str_squish(m[, 2]), points = as.integer(m[, 3]),
+           round = as.integer(m[, 4]), reason = str_squish(m[, 5]))
+  })
+}
+
 # Write a data frame to Parquet and return its path (for format = "file" targets).
 write_parquet_target <- function(df, path) {
   dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)

@@ -24,6 +24,9 @@ list(
              list.files(file.path(MMAD_RAW, "decisions"), "\\.html$", full.names = TRUE),
              cue = tar_cue(mode = "always")),
   tar_target(mmad_parsed, parse_all_decisions(mmad_files)),
+  tar_target(mmad_deductions, mmad_parse_deductions(mmad_files)),
+  # Judges' round scores with deducted points added back (official scores kept).
+  tar_target(mmad_judges_adj, restore_deductions(mmad_parsed$judges, mmad_deductions, mmad_parsed$fight)),
   tar_target(mmad_fights_file, write_parquet_target(mmad_parsed$fight,  "data/interim/mmad_fights.parquet"),  format = "file"),
   tar_target(mmad_judges_file, write_parquet_target(mmad_parsed$judges, "data/interim/mmad_judge_rounds.parquet"), format = "file"),
   tar_target(mmad_media_file,  write_parquet_target(mmad_parsed$media,  "data/interim/mmad_media.parquet"),  format = "file"),
@@ -40,7 +43,7 @@ list(
   tar_target(link_report, linkage_report(links, mmad_parsed$fight)),
 
   # ---- Stage 5: judge x round modeling table --------------------------------
-  tar_target(judge_rounds, build_judge_rounds(mmad_parsed$judges, links, rs_wide, ufc_fights)),
+  tar_target(judge_rounds, build_judge_rounds(mmad_judges_adj, links, rs_wide, ufc_fights)),
   tar_target(judge_rounds_file,
              write_parquet_target(judge_rounds, "data/interim/judge_rounds.parquet"), format = "file"),
   tar_target(fight_table, build_fight_table(mmad_parsed, links, ufc_fights)),
@@ -77,5 +80,31 @@ list(
   # 10-8 model (P(10-8 | judge's winner)).
   tar_target(ten_eight_data, prep_ten_eight(model_data)),
   tar_target(ten_eight_cv_res, ten_eight_cv(ten_eight_data)),
-  tar_target(ten_eight_model, fit_ten_eight(ten_eight_data))
+  tar_target(ten_eight_model, fit_ten_eight(ten_eight_data)),
+
+  # ---- Stage 7: simulation + Robbery Index (Phase 4) ---------------------------
+  tar_target(dec_rounds, decision_rounds(fight_table, rs_wide)),
+  # Out-of-fold round probabilities for fights the model trained on.
+  tar_target(round_probs, oof_round_probs(round_wfs_final$xgboost, model_ok, dec_rounds, final_fits$xgboost)),
+  tar_target(triples, judge_round_triples(model_data, round_probs)),
+  tar_target(judge_corr, estimate_judge_corr(triples)),
+  tar_target(q8, ten_eight_probs(ten_eight_model, dec_rounds)),
+  tar_target(ten_eight_corr, estimate_ten_eight_corr(triples, q8)),
+  tar_target(ten_ten_model, fit_ten_ten(model_data, round_probs)),
+  tar_target(deductions_fight, fight_deductions(mmad_deductions, mmad_parsed$fight, links)),
+  tar_target(sims, simulate_all(dec_rounds, round_probs, q8, ten_ten_model,
+                                judge_corr$rho, ten_eight_corr$rho8, deductions_fight)),
+  tar_target(stat_summary, fight_stat_summary(dec_rounds, round_probs)),
+  tar_target(robbery_index, build_robbery_index(fight_table, sims, stat_summary, deductions_fight)),
+  tar_target(robbery_index_file,
+             write_parquet_target(robbery_index, "data/interim/robbery_index.parquet"), format = "file"),
+  # Sensitivity: the same pipeline with glmnet round probabilities.
+  tar_target(round_probs_glmnet,
+             oof_round_probs(round_wfs_final$glmnet, model_ok, dec_rounds, final_fits$glmnet)),
+  tar_target(judge_corr_glmnet, estimate_judge_corr(judge_round_triples(model_data, round_probs_glmnet), reps = 50)),
+  tar_target(sims_glmnet, simulate_all(dec_rounds, round_probs_glmnet, q8, ten_ten_model,
+                                       judge_corr_glmnet$rho, ten_eight_corr$rho8, deductions_fight)),
+  # Sanity checks: a direct fight-level model, and judges' card totals.
+  tar_target(fight_direct, fight_level_check(dec_rounds, fight_table)),
+  tar_target(card_check, card_total_check(mmad_parsed, links, sims, fight_table))
 )

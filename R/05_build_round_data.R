@@ -68,6 +68,50 @@ clean_greco_round_stats <- function(greco, fights) {
     )
 }
 
+# Map each deduction to fighter 1 / fighter 2 (by surname, as for media picks).
+deduction_sides <- function(deductions, mmad_fights) {
+  deductions |>
+    inner_join(mmad_fights |> select(decision_id, fighter1, fighter2), by = "decision_id") |>
+    mutate(side = media_side(who, fighter1, fighter2))
+}
+
+# Add deducted points back to each judge's round score, so the modeling outcome
+# is the judge's own call on the round (a 10-9 for X with a point taken from X
+# reads 9-9 on the official card). The official scores are kept alongside.
+restore_deductions <- function(judges, deductions, mmad_fights) {
+  d <- deduction_sides(deductions, mmad_fights)
+  if (anyNA(d$side)) warning(sum(is.na(d$side)), " deduction(s) couldn't be mapped to a fighter")
+  add <- d |>
+    filter(!is.na(side)) |>
+    group_by(decision_id, round) |>
+    summarise(ded_f1 = sum(points[side == "f1"]), ded_f2 = sum(points[side == "f2"]), .groups = "drop")
+  judges |>
+    mutate(round_int = suppressWarnings(as.integer(round))) |>
+    left_join(add, by = c("decision_id", "round_int" = "round")) |>
+    mutate(ded_f1 = coalesce(ded_f1, 0L), ded_f2 = coalesce(ded_f2, 0L),
+           score_f1_official = score_f1, score_f2_official = score_f2,
+           score_f1 = score_f1 + ded_f1, score_f2 = score_f2 + ded_f2,
+           # A few cards evidently didn't apply the deduction in that round
+           # (restoring would give 11-9), so keep their official score.
+           bad = coalesce(score_f1 > 10 | score_f2 > 10, FALSE),
+           score_f1 = if_else(bad, score_f1_official, score_f1),
+           score_f2 = if_else(bad, score_f2_official, score_f2)) |>
+    select(-round_int, -bad)
+}
+
+# Total deductions per linked fight, oriented to UFCStats fighters A and B.
+fight_deductions <- function(deductions, mmad_fights, links) {
+  deduction_sides(deductions, mmad_fights) |>
+    filter(!is.na(side)) |>
+    inner_join(links |> filter(confidence != "unmatched") |> select(decision_id, fight_url, f1_is_a),
+               by = "decision_id") |>
+    mutate(side_ab = if_else((side == "f1") == f1_is_a, "a", "b"),
+           name = if_else(side == "f1", fighter1, fighter2)) |>
+    group_by(fight_url) |>
+    summarise(ded_a = sum(points[side_ab == "a"]), ded_b = sum(points[side_ab == "b"]),
+              ded_note = paste(sprintf("%s -%d (rd %d)", name, points, round), collapse = "; "), .groups = "drop")
+}
+
 # Stats whose A-minus-B differential is a model feature.
 DIFF_VARS <- c("kd", "sig_l", "sig_a", "tot_l", "td_l", "td_a", "sub_att", "rev", "ctrl_s",
                "head_l", "body_l", "leg_l", "dist_l", "clinch_l", "ground_l")
@@ -101,8 +145,8 @@ build_judge_rounds <- function(judge_rounds, links, rs_wide, ufc_fights) {
 # inside each full name; if it matches both fighters (same surname), it's NA.
 media_side <- function(pick, fighter1, fighter2) {
   p <- normalize_name(pick)
-  in1 <- str_detect(normalize_name(fighter1), fixed(p))
-  in2 <- str_detect(normalize_name(fighter2), fixed(p))
+  in1 <- str_detect(normalize_name(fighter1), stringr::fixed(p))
+  in2 <- str_detect(normalize_name(fighter2), stringr::fixed(p))
   case_when(p == "draw" ~ "draw", in1 & !in2 ~ "f1", in2 & !in1 ~ "f2", TRUE ~ NA_character_)
 }
 

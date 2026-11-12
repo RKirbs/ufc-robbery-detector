@@ -65,7 +65,7 @@ add_round_features <- function(df) {
 prep_model_data <- function(judge_rounds, ufc_fights, mmad_parsed) {
   cards <- judge_rounds |>
     group_by(decision_id, judge_order, fight_url) |>
-    summarise(n_rounds = n(), s1 = sum(score_f1), s2 = sum(score_f2), .groups = "drop") |>
+    summarise(n_rounds = n(), s1 = sum(score_f1_official), s2 = sum(score_f2_official), .groups = "drop") |>
     left_join(mmad_parsed$judge_totals |> select(decision_id, judge_order, total_f1, total_f2),
               by = c("decision_id", "judge_order")) |>
     left_join(ufc_fights |> select(fight_url, last_round), by = "fight_url") |>

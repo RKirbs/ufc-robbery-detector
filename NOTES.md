@@ -42,5 +42,19 @@
   - Recommended final model: xgboost, with glmnet as a sensitivity check. **Awaiting Rob's approval.**
 - Check for Phase 4: the robbery scores for fights whose judges were in the training data should use out-of-fold round predictions (grouped by fight). Otherwise the model has partly learned those very cards, which would understate disagreement.
 
+- **2026-11-12. Rob approved Phase 3:** xgboost is the final round model (glmnet as a sensitivity check); keep the every-factor breakdown of what judges reward.
+- **2026-11-12. Data bug fixed: point deductions.** MMADecisions round scores include deductions (109 deductions in 105 fights, parsed from the "X was deducted N point(s) in round R" text).
+  - Before the fix, 138 of 163 apparent 10-10 judge-rounds were really 10-9s with the winner deducted, and some 10-8s were 10-9s with the loser deducted.
+  - Deducted points are now added back for modeling (official scores kept in `score_f*_official`). 3 cards where restoring would give 11-9 keep their official score.
+  - The simulation subtracts deductions from simulated cards. Phase 3 was rerun; its conclusions are unchanged.
+- **2026-11-12. Simulation design (Phase 4):**
+  - Judge calls are latent normals with a shared round factor: ρ = 0.61 (CI 0.58–0.63) by maximum likelihood on split rates. 10-8s use the same approach with ρ₈ = 0.60.
+  - 10-10s come from a logistic model on round closeness and era.
+  - Out-of-fold round probabilities (10-fold, grouped by fight) for every fight the round model trained on.
+  - 10,000 simulated sets of three cards per fight; a fighter wins with at least 2 cards.
+- **Observation for Phase 5:** red corners won 61.4% of decisions vs. 57.1% simulated (the model is corner-symmetric). Test this in the judge analysis; don't call it a finding yet.
+- **Phase 4 checkpoint:** proposed tiers are the brief's 0.25 / 0.50 / 0.75 (225 robbery-tier fights, 5.6%). Recommendation: don't tune cutoffs on media (media are the Phase 5 validation set). Awaiting Rob.
+- Data caveat: pre-2008 stats were coded from video after the fact, and some early fights have 0–2 media scores. Proposal: flag them as "limited corroboration" on the leaderboard.
+
 ## Open questions
 - Use the BestFightOdds odds extension (Phase 6)? Ask before scraping (about 30–45 min).
