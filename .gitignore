@@ -1,0 +1,29 @@
+# R / RStudio
+.Rhistory
+.RData
+.Rproj.user/
+.Renviron
+*.Rproj
+
+# renv (the lockfile is committed; the library is not)
+renv/library/
+renv/staging/
+renv/local/
+renv/python/
+
+# targets store
+_targets/
+
+# Data: raw HTML/CSVs and intermediates are rebuilt by the pipeline
+data/raw/
+data/interim/
+
+# Quarto build artifacts (the rendered site goes to docs/, which IS committed)
+analysis/.quarto/
+analysis/_freeze/
+*_files/
+/.quarto/
+
+# OS / editor
+.DS_Store
+.vscode/
