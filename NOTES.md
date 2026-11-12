@@ -27,6 +27,20 @@
 - Drop at modeling time: the 19 judge cards whose round count differs from UFCStats, the 1 card whose round scores don't sum to its total, and the 4 fights with placeholder totals.
 - `vip` has been removed from CRAN; use `shapviz` and xgboost's built-in feature importance instead.
 
+- **2026-11-12. Modeling design: Option A (approved by Rob).** The round model is trained only on rounds with judge round scores (33,482 judge-rounds, mostly 2011+). It's applied to all 4,109 decisions. For totals-only fights (mostly pre-2011), the judges' card totals are used only as an out-of-sample check, not for training.
+
+- **2026-11-12. Round model choices (Phase 3):**
+  - 10-10 rounds (163 judge-rounds) are dropped from the winner model and handled in the Phase 4 simulation; 10-8 rounds count as wins, and a separate model predicts P(10-8 | winner).
+  - Training rows are mirrored and predictions symmetrised, p = [p(x) + 1 − p(−x)] / 2.
+  - Significant strikes enter by target. Clinch and ground enter as premiums over distance, because target and position each sum to the significant-strike total.
+  - Accuracy is smoothed as (landed + 1) / (attempted + 2).
+  - Time split: train 2006–2019, test 2020–2026, plus rolling-origin tests and grouped 5-fold CV by fight.
+  - `CRITERIA_2017 = 2017-01-01` is provisional; verify and cite it in Phase 5.
+- **2026-11-12. Phase 3 result:**
+  - All three models beat the baseline (test log-loss about 0.38 against 0.55).
+  - glmnet has the best log-loss, but xgboost is best calibrated, because linear models can't capture judges' diminishing returns past about +20 head strikes.
+  - Recommended final model: xgboost, with glmnet as a sensitivity check. **Awaiting Rob's approval.**
+- Check for Phase 4: the robbery scores for fights whose judges were in the training data should use out-of-fold round predictions (grouped by fight). Otherwise the model has partly learned those very cards, which would understate disagreement.
+
 ## Open questions
-- **Modeling design given partial round scores (decide at the Phase 2 checkpoint):** train the round model on rounds that have judge round scores (mostly 2008+), and use card totals for older fights (a likelihood over round assignments consistent with each total) or for validation only. Robbery scores can still be computed for every fight, because the model only needs round stats as inputs.
 - Use the BestFightOdds odds extension (Phase 6)? Ask before scraping (about 30–45 min).
