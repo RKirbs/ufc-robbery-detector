@@ -111,7 +111,7 @@ PHASE*_REPORT.md   checkpoint reports
 - **MMADecisions.com** judge and media scorecards, used with permission.
 - **BestFightOdds.com** historical odds.
 
-Code is released under the MIT License.
+Code is released under the MIT License. The licence covers the code only: third-party data remain subject to their owners' terms, and raw scraped pages are not redistributed.
 
 ## Author
 
