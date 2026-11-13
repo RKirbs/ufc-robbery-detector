@@ -3,6 +3,7 @@
 ## Decision log
 - **2026-11-11. Freeze date: 2026-11-07** (UFC Fight Night: Cortes Acosta vs. Walker, the latest completed event in the data on the audit date).
 - **2026-11-11. Start date: 2001-01-01.** This is the first full year after the UFC adopted the Unified Rules (UFC 28, Nov 2000); control time is recorded from 2000 and judge totals mostly from 2001. Rob didn't object to the Phase 0 recommendation. Plan a sensitivity check that starts in 2005.
+  - *2026-11-13, sensitivity check done:* the start date can't affect the model. No training round (the earliest is 2006-08-17) and no judge triple used for ρ predates 2005. The 49 decisions before 2005 contain no Robbery-tier fight, and the Robbery share is 5.6% either way.
 - **2026-11-11. UFCStats source: the Greco1899/scrape_ufc_stats mirror,** pinned to commit `c742842f29466758fedc3906dbad28d6d320a8da` (approved by Rob). UFCStats.com itself serves a JavaScript proof-of-work bot challenge, which we don't bypass. The mirror is GPL-3.0, so we download it at build time and don't commit its files.
 - **2026-11-11. MMADecisions: permission granted.** Its robots.txt disallows generic bots (`User-agent: * / Disallow: /`). Rob contacted the site owner, who said the data may be used and collected from the site (they won't send an export). We scrape politely and slowly with an honest user agent and cache every page. *Rob: keep a copy of that message with the project records.*
 - **2026-11-11. MMADecisions supplies both the model outcome and the validation set:** judge round-by-round scores and media scorecards. This restores the original design in the brief (sections 6a and 7).
@@ -97,4 +98,6 @@
 - To update the site later: `targets::tar_make()`, then `quarto render analysis/`, then `Rscript scripts/build_readme.R`, then commit and push.
 
 ## Open questions
-- Use the BestFightOdds odds extension (Phase 6)? Ask before scraping (about 30–45 min).
+- None outstanding. (The BestFightOdds odds extension was approved and became Phase 6.)
+- 2026-11-13: in 55 fights with tied totals, the "why" line said one fighter "out-landed" the other (for example "38-38"). Ties now say "were even at N-N".
+- Optional follow-ups: check Nurmagomedov vs. Scoggins (2018) strike counts against video; add unit tests for parsers and `explain_fight()`.

@@ -218,10 +218,16 @@ fmt_mss <- function(s) sprintf("%d:%02d", as.integer(abs(s) %/% 60), as.integer(
 # so readers can see what the stats may be missing.
 explain_fight <- function(winner_name, loser_name, s) {
   W <- surname_of(winner_name); L <- surname_of(loser_name)
-  lead <- sprintf("Model favored %s in %d of %d rounds; %s out-landed %s %d-%d in sig. strikes (ahead in %d of %d)",
-                  L, s$rounds_model_loser, s$n_rounds, ifelse(s$sig_l >= s$sig_w, L, W),
-                  ifelse(s$sig_l >= s$sig_w, W, L), pmax(s$sig_l, s$sig_w), pmin(s$sig_l, s$sig_w),
-                  ifelse(s$sig_l >= s$sig_w, s$rounds_sig_loser, s$n_rounds - s$rounds_sig_loser), s$n_rounds)
+  # Ties get their own wording, so an even count is never described as one fighter out-landing the other.
+  strikes <- ifelse(
+    s$sig_l == s$sig_w,
+    sprintf("%s and %s were even at %d-%d in sig. strikes (%s ahead in %d of %d rounds)",
+            L, W, s$sig_l, s$sig_w, L, s$rounds_sig_loser, s$n_rounds),
+    sprintf("%s out-landed %s %d-%d in sig. strikes (ahead in %d of %d)",
+            ifelse(s$sig_l > s$sig_w, L, W), ifelse(s$sig_l > s$sig_w, W, L),
+            pmax(s$sig_l, s$sig_w), pmin(s$sig_l, s$sig_w),
+            ifelse(s$sig_l > s$sig_w, s$rounds_sig_loser, s$n_rounds - s$rounds_sig_loser), s$n_rounds))
+  lead <- sprintf("Model favored %s in %d of %d rounds; %s", L, s$rounds_model_loser, s$n_rounds, strikes)
   counter <- pmap_chr(list(W, L, s$kd_w, s$kd_l, s$head_w, s$head_l, s$td_w, s$td_l, s$ctrl_w, s$ctrl_l),
     \(W, L, kdw, kdl, hw, hl, tdw, tdl, cw, cl) {
       parts <- c(
